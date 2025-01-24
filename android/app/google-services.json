@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "172479368024",
+    "project_id": "fir-flutter-c623d",
+    "storage_bucket": "fir-flutter-c623d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172479368024:android:692778e4f9b0c33257b32d",
+        "android_client_info": {
+          "package_name": "com.example.intec_social_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD69tD8s4gU4IJj3gLMdn-xQz1TIXxs75E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
