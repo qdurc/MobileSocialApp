@@ -35,14 +35,17 @@ class _ChatScreenState extends State<ChatScreen> {
         final snapshot = await uploadTask;
         mediaUrl = await snapshot.ref.getDownloadURL();
       } catch (e) {
-        print("Error al subir el archivo: $e");
+        debugPrint("Error al subir el archivo: $e");
         return;
       }
     }
 
     try {
-      // Agregar datos del usuario en el mensaje
-      await _firestore.collection('chats').doc(widget.chatId).collection('messages').add({
+      await _firestore
+          .collection('chats')
+          .doc(widget.chatId)
+          .collection('messages')
+          .add({
         'senderId': currentUser?.uid,
         'username': currentUser?.displayName ?? 'Usuario',
         'profilePicture': currentUser?.photoURL,
@@ -56,7 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _mediaFile = null;
       });
     } catch (e) {
-      print("Error al enviar mensaje: $e");
+      debugPrint("Error al enviar mensaje: $e");
     }
   }
 
@@ -74,10 +77,13 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat'),
+        title: const Text(
+          'Chat',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Column(
         children: [
@@ -91,16 +97,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (snapshot.hasError) {
-                  print(snapshot.error);
-                  return Center(child: Text('Error al cargar mensajes.'));
+                  debugPrint(snapshot.error.toString());
+                  return const Center(child: Text('Error al cargar mensajes.'));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('No hay mensajes aún.'));
+                  return const Center(child: Text('No hay mensajes aún.'));
                 }
 
                 return ListView.builder(
@@ -110,64 +116,73 @@ class _ChatScreenState extends State<ChatScreen> {
                     final message = snapshot.data!.docs[index];
                     final data = message.data() as Map<String, dynamic>;
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: data['profilePicture'] != null
-                            ? NetworkImage(data['profilePicture'])
-                            : null,
-                        child: data['profilePicture'] == null
-                            ? Icon(Icons.person, color: Colors.grey)
-                            : null,
-                      ),
-                      title: Text(data['username'] ?? 'Usuario'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (data['mediaUrl'] != null)
-                            Image.network(
-                              data['mediaUrl'],
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          Text(data['text'] ?? '[Mensaje vacío]'),
-                          if (data['createdAt'] != null)
-                            Text(
-                              (data['createdAt'] as Timestamp)
-                                  .toDate()
-                                  .toLocal()
-                                  .toString(),
-                              style: TextStyle(fontSize: 10, color: Colors.grey),
-                            ),
-                        ],
-                      ),
-                    );
+                    return _buildMessageTile(data);
                   },
                 );
               },
             ),
           ),
-          Divider(),
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.photo),
-                onPressed: _pickMedia,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _messageController,
-                  decoration: InputDecoration(hintText: 'Escribe un mensaje...'),
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.send),
-                onPressed: () => _sendMessage(_messageController.text.trim()),
-              ),
-            ],
-          ),
+          const Divider(),
+          _buildMessageInput(),
         ],
       ),
+    );
+  }
+
+  Widget _buildMessageTile(Map<String, dynamic> data) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: data['profilePicture'] != null
+            ? NetworkImage(data['profilePicture'])
+            : null,
+        child: data['profilePicture'] == null
+            ? const Icon(Icons.person, color: Colors.grey)
+            : null,
+      ),
+      title: Text(data['username'] ?? 'Usuario'),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (data['mediaUrl'] != null)
+            Image.network(
+              data['mediaUrl'],
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+            ),
+          Text(data['text'] ?? '[Mensaje vacío]'),
+          if (data['createdAt'] != null)
+            Text(
+              (data['createdAt'] as Timestamp).toDate().toLocal().toString(),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.photo),
+          onPressed: _pickMedia,
+        ),
+        Expanded(
+          child: TextField(
+            controller: _messageController,
+            decoration: const InputDecoration(
+              hintText: 'Escribe un mensaje...',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.send),
+          onPressed: () => _sendMessage(_messageController.text.trim()),
+        ),
+      ],
     );
   }
 }

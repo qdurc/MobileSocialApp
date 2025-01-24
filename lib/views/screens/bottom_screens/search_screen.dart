@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import 'follow_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -34,10 +33,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buscar Usuarios'),
+        title: const Text(
+          'Buscar Usuarios',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Column(
         children: [
@@ -48,7 +50,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onChanged: (_) => _onSearchChanged(),
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre de usuario...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -62,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
               future: _searchUsers(_searchTerm),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -71,6 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       _searchTerm.isEmpty
                           ? 'Introduce un término de búsqueda'
                           : 'No se encontraron usuarios.',
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   );
                 }
@@ -86,7 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ? NetworkImage(user['profilePicture'])
                             : null,
                         child: user['profilePicture'] == null
-                            ? Icon(Icons.person)
+                            ? const Icon(Icons.person, color: Colors.grey)
                             : null,
                       ),
                       title: Text(user['displayName'] ?? 'Usuario'),

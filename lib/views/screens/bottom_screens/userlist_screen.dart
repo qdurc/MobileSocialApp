@@ -11,40 +11,54 @@ class UserListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-    // Manejar el caso en el que la lista esté vacía
+    // Caso donde la lista de usuarios está vacía
     if (userIds.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(title),
+          title: Text(
+            title,
+            style: const TextStyle(color: Colors.black),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
-          iconTheme: IconThemeData(color: Colors.black),
+          iconTheme: const IconThemeData(color: Colors.black),
         ),
-        body: Center(
-          child: Text('No hay usuarios disponibles.'),
+        body: const Center(
+          child: Text(
+            'No hay usuarios disponibles.',
+            style: TextStyle(color: Colors.grey),
+          ),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: FutureBuilder(
+      body: FutureBuilder<QuerySnapshot>(
         future: _firestore
             .collection('users')
             .where(FieldPath.documentId, whereIn: userIds)
             .get(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No se encontraron usuarios.'));
+            return const Center(
+              child: Text(
+                'No se encontraron usuarios.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -59,7 +73,7 @@ class UserListScreen extends StatelessWidget {
                       ? NetworkImage(userData['profilePicture'])
                       : null,
                   child: userData['profilePicture'] == null
-                      ? Icon(Icons.person, color: Colors.grey)
+                      ? const Icon(Icons.person, color: Colors.grey)
                       : null,
                 ),
                 title: Text(userData['displayName'] ?? 'Usuario'),

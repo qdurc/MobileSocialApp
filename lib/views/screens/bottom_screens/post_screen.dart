@@ -32,7 +32,7 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _uploadPost() async {
     if (_mediaFile == null || _captionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, selecciona un archivo y escribe un pie de foto.')),
+        const SnackBar(content: Text('Por favor, selecciona un archivo y escribe un pie de foto.')),
       );
       return;
     }
@@ -43,7 +43,6 @@ class _PostScreenState extends State<PostScreen> {
 
     try {
       User? user = _auth.currentUser;
-      print('Este es el $user');
       if (user != null) {
         String postId = Uuid().v4();
         String fileName = 'posts/$postId';
@@ -56,14 +55,14 @@ class _PostScreenState extends State<PostScreen> {
         // Guardar detalles del post en Firestore
         await _firestore.collection('posts').doc(postId).set({
           'userId': user.uid,
-          'username': user.displayName,
+          'username': user.displayName ?? 'Usuario',
           'caption': _captionController.text.trim(),
           'mediaUrl': fileUrl,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Publicación subida con éxito.')),
+          const SnackBar(content: Text('Publicación subida con éxito.')),
         );
         setState(() {
           _mediaFile = null;
@@ -71,9 +70,9 @@ class _PostScreenState extends State<PostScreen> {
         });
       }
     } catch (e) {
-      print('Error al subir la publicación: $e');
+      debugPrint('Error al subir la publicación: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al subir la publicación.')),
+        const SnackBar(content: Text('Error al subir la publicación.')),
       );
     } finally {
       setState(() {
@@ -86,13 +85,13 @@ class _PostScreenState extends State<PostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Crear Publicación'),
+        title: const Text('Crear Publicación', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: Icon(Icons.check, color: Colors.blue),
+            icon: const Icon(Icons.check, color: Colors.blue),
             onPressed: _isUploading ? null : _uploadPost,
           ),
         ],
@@ -106,27 +105,39 @@ class _PostScreenState extends State<PostScreen> {
               onTap: _pickMedia,
               child: Container(
                 height: 200,
-                color: Colors.grey[200],
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
                 child: _mediaFile != null
-                    ? Image.file(_mediaFile!, fit: BoxFit.cover)
-                    : Icon(Icons.add_a_photo, color: Colors.grey, size: 50),
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.file(_mediaFile!, fit: BoxFit.cover),
+                )
+                    : const Icon(Icons.add_a_photo, color: Colors.grey, size: 50),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _captionController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Escribe un pie de foto...',
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _isUploading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
               onPressed: _uploadPost,
-              child: Text('Subir Publicación'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: const Text('Subir Publicación'),
             ),
           ],
         ),

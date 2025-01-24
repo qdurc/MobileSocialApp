@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 class EditProfileScreen extends StatefulWidget {
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
@@ -47,9 +48,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           String fileUrl = await snapshot.ref.getDownloadURL();
           updatedData['profilePicture'] = fileUrl;
         } catch (e) {
-          print("Error al subir la imagen: $e");
+          debugPrint("Error al subir la imagen: $e");
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al subir la imagen.')),
+            const SnackBar(content: Text('Error al subir la imagen.')),
           );
           return;
         }
@@ -58,20 +59,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         await _firestore.collection('users').doc(user.uid).update(updatedData);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Perfil actualizado con éxito!')),
+          const SnackBar(content: Text('Perfil actualizado con éxito!')),
         );
-
-        // Notifica que el perfil fue actualizado
         Navigator.pop(context, true);
       } catch (e) {
-        print("Error al actualizar el perfil: $e");
+        debugPrint("Error al actualizar el perfil: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al actualizar el perfil.')),
+          const SnackBar(content: Text('Error al actualizar el perfil.')),
         );
       }
     }
   }
-
 
   Future<void> _fetchUserData() async {
     User? user = _auth.currentUser;
@@ -97,13 +95,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Editar Perfil'),
+        title: const Text('Editar Perfil', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: Icon(Icons.check, color: Colors.blue),
+            icon: const Icon(Icons.check, color: Colors.blue),
             onPressed: _updateProfile,
           ),
         ],
@@ -118,45 +116,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 radius: 50,
                 backgroundColor: Colors.grey[300],
                 backgroundImage: _image != null ? FileImage(_image!) : null,
-                child: _image == null ? Icon(Icons.camera_alt, size: 30, color: Colors.grey) : null,
+                child: _image == null
+                    ? const Icon(Icons.camera_alt, size: 30, color: Colors.grey)
+                    : null,
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: 16),
+            _buildTextField(
               controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'Nombre de Usuario',
-                border: OutlineInputBorder(),
-              ),
+              labelText: 'Nombre de Usuario',
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: 16),
+            _buildTextField(
               controller: _lastNameController,
-              decoration: InputDecoration(
-                labelText: 'Apellido',
-                border: OutlineInputBorder(),
-              ),
+              labelText: 'Apellido',
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: 16),
+            _buildTextField(
               controller: _bioController,
-              decoration: InputDecoration(
-                labelText: 'Biografía',
-                border: OutlineInputBorder(),
-              ),
+              labelText: 'Biografía',
               maxLines: 3,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: 16),
+            _buildTextField(
               controller: _phoneController,
-              decoration: InputDecoration(
-                labelText: 'Teléfono',
-                border: OutlineInputBorder(),
-              ),
+              labelText: 'Teléfono',
               keyboardType: TextInputType.phone,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
       ),
     );
   }

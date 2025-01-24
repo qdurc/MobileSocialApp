@@ -14,7 +14,6 @@ class _FeedScreenState extends State<FeedScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Mapa para almacenar las URLs de las imágenes de perfil de los usuarios.
   Map<String, String?> _profilePictures = {};
 
   Future<void> _toggleLike(String postId, List likes) async {
@@ -23,51 +22,48 @@ class _FeedScreenState extends State<FeedScreen> {
 
     if (likes.contains(user.uid)) {
       await _firestore.collection('posts').doc(postId).update({
-        'likes': FieldValue.arrayRemove([user.uid])
+        'likes': FieldValue.arrayRemove([user.uid]),
       });
     } else {
       await _firestore.collection('posts').doc(postId).update({
-        'likes': FieldValue.arrayUnion([user.uid])
+        'likes': FieldValue.arrayUnion([user.uid]),
       });
     }
   }
 
   Future<String?> _getProfilePicture(String userId) async {
-    // Verificar si ya tenemos la URL en el mapa.
     if (_profilePictures.containsKey(userId)) {
       return _profilePictures[userId];
     }
 
-    // Si no la tenemos, hacer la consulta.
     try {
       DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(userId).get();
+      await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
         var userData = userDoc.data() as Map<String, dynamic>?;
         String? profilePicUrl = userData?['profilePicture'];
-        // Almacenar la URL en el mapa para uso futuro.
         _profilePictures[userId] = profilePicUrl;
         return profilePicUrl;
       }
     } catch (e) {
-      print("Error al obtener la imagen de perfil: $e");
+      debugPrint("Error al obtener la imagen de perfil: $e");
     }
     return null;
   }
 
   Widget _buildStoriesCarousel() {
-    return StreamBuilder(
+    return StreamBuilder<QuerySnapshot>(
       stream: _firestore
           .collection('stories')
           .orderBy('createdAt', descending: true)
           .snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No hay historias aún.'));
+          return const Center(child: Text('No hay historias aún.'));
         }
 
         return SizedBox(
@@ -80,7 +76,6 @@ class _FeedScreenState extends State<FeedScreen> {
               final data = story.data() as Map<String, dynamic>;
               return GestureDetector(
                 onTap: () {
-                  // Navegar a la pantalla de visualización de historia
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -91,29 +86,25 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   );
                 },
-                child: Container(
-                  margin: EdgeInsets.all(8.0),
-                  width: 80,
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 35,
-                        backgroundImage: data['mediaUrl'] != null
-                            ? NetworkImage(data['mediaUrl'])
-                            : null,
-                        child: data['mediaUrl'] == null
-                            ? Icon(Icons.person, size: 40)
-                            : null,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        data['username'] ?? 'Usuario',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundImage: data['mediaUrl'] != null
+                          ? NetworkImage(data['mediaUrl'])
+                          : null,
+                      child: data['mediaUrl'] == null
+                          ? const Icon(Icons.person, size: 40)
+                          : null,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      data['username'] ?? 'Usuario',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
                 ),
               );
             },
@@ -127,15 +118,14 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Feed'),
+        title: const Text('Feed', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: Icon(Icons.add_a_photo, color: Colors.blue),
+            icon: const Icon(Icons.add_a_photo, color: Colors.blue),
             onPressed: () {
-              // Navegar a la pantalla de historias
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => StoryScreen()),
@@ -148,18 +138,18 @@ class _FeedScreenState extends State<FeedScreen> {
         children: [
           _buildStoriesCarousel(),
           Expanded(
-            child: StreamBuilder(
+            child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
                   .collection('posts')
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('No hay publicaciones aún.'));
+                  return const Center(child: Text('No hay publicaciones aún.'));
                 }
 
                 return ListView.builder(
@@ -171,20 +161,17 @@ class _FeedScreenState extends State<FeedScreen> {
                     final userId = data['userId'];
 
                     return Card(
-                      margin: EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           FutureBuilder<String?>(
-                            future: _getProfilePicture(
-                                userId), // Obtiene la URL de la imagen de perfil
+                            future: _getProfilePicture(userId),
                             builder: (context, snapshot) {
-                              if (snapshot.hasError || !snapshot.hasData) {
-                                return CircleAvatar(
-                                    child: Icon(Icons
-                                        .person)); // Si hay error o no hay datos
+                              if (!snapshot.hasData) {
+                                return const CircleAvatar(
+                                    child: Icon(Icons.person));
                               }
-
                               return CircleAvatar(
                                 backgroundImage: NetworkImage(snapshot.data!),
                               );
@@ -210,9 +197,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                 onPressed: () => _toggleLike(post.id, likes),
                               ),
                               Text('${likes.length} Me gusta'),
-                              Spacer(),
+                              const Spacer(),
                               IconButton(
-                                icon: Icon(Icons.comment),
+                                icon: const Icon(Icons.comment),
                                 onPressed: () {
                                   Navigator.push(
                                     context,

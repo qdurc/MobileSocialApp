@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'bottom_screens/chatlist_screen.dart';
+import 'package:intec_social_app/views/screens/bottom_screens/chatlist_screen.dart';
 import 'bottom_screens/feed_screen.dart';
 import 'bottom_screens/post_screen.dart';
 import 'bottom_screens/profile_screen.dart';

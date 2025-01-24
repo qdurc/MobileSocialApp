@@ -27,7 +27,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     for (var doc in existingChat.docs) {
       final chatParticipants = List<String>.from(doc['participants']);
       if (chatParticipants.contains(userId)) {
-        // Si ya existe un chat, redirige al mismo
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -60,12 +59,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chats'),
+        title: const Text('Chats', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(50),
+          preferredSize: const Size.fromHeight(50),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
@@ -88,103 +87,111 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ),
       ),
       body: _searchQuery.isEmpty
-          ? StreamBuilder(
-        stream: _firestore
-            .collection('chats')
-            .where('participants', arrayContains: currentUser?.uid)
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+          ? _buildChatList(currentUser)
+          : _buildSearchResults(),
+    );
+  }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No hay chats disponibles.'));
-          }
+  Widget _buildChatList(User? currentUser) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('chats')
+          .where('participants', arrayContains: currentUser?.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final chat = snapshot.data!.docs[index];
-              final chatData = chat.data() as Map<String, dynamic>;
-              final otherUserId = chatData['participants']
-                  .firstWhere((id) => id != currentUser?.uid);
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No hay chats disponibles.'));
+        }
 
-              return FutureBuilder(
-                future: _firestore.collection('users').doc(otherUserId).get(),
-                builder: (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
-                  if (!userSnapshot.hasData) {
-                    return SizedBox.shrink();
-                  }
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final chat = snapshot.data!.docs[index];
+            final chatData = chat.data() as Map<String, dynamic>;
+            final otherUserId = chatData['participants']
+                .firstWhere((id) => id != currentUser?.uid);
 
-                  final userData = userSnapshot.data?.data() as Map<String, dynamic>;
+            return FutureBuilder<DocumentSnapshot>(
+              future: _firestore.collection('users').doc(otherUserId).get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: userData['profilePicture'] != null
-                          ? NetworkImage(userData['profilePicture'])
-                          : null,
-                      child: userData['profilePicture'] == null
-                          ? Icon(Icons.person, color: Colors.grey)
-                          : null,
-                    ),
-                    title: Text(userData['displayName'] ?? 'Usuario'),
-                    subtitle: Text(chatData['lastMessage'] ?? ''),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            chatId: chat.id,
-                            otherUserId: otherUserId,
-                          ),
+                final userData = userSnapshot.data?.data() as Map<String, dynamic>;
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: userData['profilePicture'] != null
+                        ? NetworkImage(userData['profilePicture'])
+                        : null,
+                    child: userData['profilePicture'] == null
+                        ? const Icon(Icons.person, color: Colors.grey)
+                        : null,
+                  ),
+                  title: Text(userData['displayName'] ?? 'Usuario'),
+                  subtitle: Text(chatData['lastMessage'] ?? ''),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          chatId: chat.id,
+                          otherUserId: otherUserId,
                         ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      )
-          : FutureBuilder(
-        future: _firestore
-            .collection('users')
-            .where('displayName', isGreaterThanOrEqualTo: _searchQuery)
-            .where('displayName', isLessThanOrEqualTo: '$_searchQuery\uf8ff')
-            .get(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No se encontraron usuarios.'));
-          }
+  Widget _buildSearchResults() {
+    return FutureBuilder<QuerySnapshot>(
+      future: _firestore
+          .collection('users')
+          .where('displayName', isGreaterThanOrEqualTo: _searchQuery)
+          .where('displayName', isLessThanOrEqualTo: '$_searchQuery\uf8ff')
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final user = snapshot.data!.docs[index];
-              final userData = user.data() as Map<String, dynamic>;
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No se encontraron usuarios.'));
+        }
 
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: userData['profilePicture'] != null
-                      ? NetworkImage(userData['profilePicture'])
-                      : null,
-                  child: userData['profilePicture'] == null
-                      ? Icon(Icons.person, color: Colors.grey)
-                      : null,
-                ),
-                title: Text(userData['displayName'] ?? 'Usuario'),
-                onTap: () => _startNewChat(user.id),
-              );
-            },
-          );
-        },
-      ),
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final user = snapshot.data!.docs[index];
+            final userData = user.data() as Map<String, dynamic>;
+
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: userData['profilePicture'] != null
+                    ? NetworkImage(userData['profilePicture'])
+                    : null,
+                child: userData['profilePicture'] == null
+                    ? const Icon(Icons.person, color: Colors.grey)
+                    : null,
+              ),
+              title: Text(userData['displayName'] ?? 'Usuario'),
+              onTap: () => _startNewChat(user.id),
+            );
+          },
+        );
+      },
     );
   }
 }

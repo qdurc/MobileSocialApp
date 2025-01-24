@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _navigateToUserList(BuildContext context, String title, List<String> userIds) {
     if (userIds.isEmpty) {
-      // Muestra un mensaje si la lista está vacía
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No hay $title disponibles')),
       );

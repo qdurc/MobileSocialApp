@@ -9,64 +9,97 @@ class AuthController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> registerUser(
-      BuildContext context, email, String password,String phone,String name, String lastname) async {
+      BuildContext context,
+      String email,
+      String password,
+      String phone,
+      String name,
+      String lastname,
+      ) async {
     try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      await _firestore.collection('users').doc(userCredential.user?.uid).set({
+      await _createUserInFirestore(
+        userCredential.user?.uid,
+        email,
+        name,
+        lastname,
+        phone,
+      );
+
+      _showToast("Cuenta creada con éxito!");
+
+      _navigateToLoginScreen(context);
+    } catch (e) {
+      debugPrint('Error desconocido: $e');
+      _showToast("Error: ${e.toString()}");
+    }
+  }
+
+  Future<void> _createUserInFirestore(
+      String? uid,
+      String email,
+      String name,
+      String lastname,
+      String phone,
+      ) async {
+    if (uid != null) {
+      await _firestore.collection('users').doc(uid).set({
         'displayName': name.trim(),
         'lastName': lastname.trim(),
         'phone': phone.trim(),
         'email': email.trim(),
         'createdAt': FieldValue.serverTimestamp(),
       });
-      Fluttertoast.showToast(
-          msg: "Cuenta creada con éxito!", toastLength: Toast.LENGTH_SHORT);
-
-      //Podemos redirigir a la pantalla de login
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return LoginScreen();
-
-      }));
-    } catch (e) {
-     print('Error desconocido: $e');
-      Fluttertoast.showToast(
-          msg: "Error: ${e.toString()}", toastLength: Toast.LENGTH_SHORT);
     }
   }
 
-  //Metodo basico para el login del usuario
+  void _navigateToLoginScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
+  }
 
   Future<void> loginUser(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
-      User? user = userCredential.user;
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      // Verifica si el displayName no está configurado y lo actualizas
-      if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
-        // Obtén el nombre de usuario desde Firestore (si lo guardaste allí)
-        DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(user.uid).get();
+      await _updateUserDisplayName(userCredential.user);
 
-        if (userDoc.exists) {
-          var userData = userDoc.data() as Map<String, dynamic>;
-          String? username = userData['displayName'];
+      _showToast("Bienvenido de Nuevo!");
+    } catch (e) {
+      debugPrint('Error de inicio de sesión: $e');
+      _showToast("Error: ${e.toString()}");
+    }
+  }
 
-          if (username != null) {
-            await user.updateDisplayName(username); // Actualiza el displayName
-            await user.reload(); // Recarga los datos del usuario
-          }
-          print("El user ta ready: $user");
+  Future<void> _updateUserDisplayName(User? user) async {
+    if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final username = userData['displayName'] ?? '';
+
+        if (username.isNotEmpty) {
+          await user.updateDisplayName(username);
+          await user.reload();
         }
       }
-      Fluttertoast.showToast(
-          msg: "Bienvenido de Nuevo!", toastLength: Toast.LENGTH_SHORT);
-      //Llevar al usuario al Home
-    } catch (e) {
-      Fluttertoast.showToast(
-          msg: "Error: ${e.toString()}", toastLength: Toast.LENGTH_SHORT);
     }
+  }
+
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+    );
   }
 }

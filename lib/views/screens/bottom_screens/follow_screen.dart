@@ -19,11 +19,11 @@ class _FollowModuleState extends State<FollowModule> {
     final targetUserDoc = _firestore.collection('users').doc(userId);
 
     await currentUserDoc.update({
-      'following': FieldValue.arrayUnion([userId])
+      'following': FieldValue.arrayUnion([userId]),
     });
 
     await targetUserDoc.update({
-      'followers': FieldValue.arrayUnion([user.uid])
+      'followers': FieldValue.arrayUnion([user.uid]),
     });
   }
 
@@ -35,11 +35,11 @@ class _FollowModuleState extends State<FollowModule> {
     final targetUserDoc = _firestore.collection('users').doc(userId);
 
     await currentUserDoc.update({
-      'following': FieldValue.arrayRemove([userId])
+      'following': FieldValue.arrayRemove([userId]),
     });
 
     await targetUserDoc.update({
-      'followers': FieldValue.arrayRemove([user.uid])
+      'followers': FieldValue.arrayRemove([user.uid]),
     });
   }
 
@@ -47,20 +47,23 @@ class _FollowModuleState extends State<FollowModule> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Usuarios'),
+        title: const Text(
+          'Usuarios',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('users').snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No se encontraron usuarios.'));
+            return const Center(child: Text('No se encontraron usuarios.'));
           }
 
           User? currentUser = _auth.currentUser;
@@ -70,11 +73,13 @@ class _FollowModuleState extends State<FollowModule> {
               final user = snapshot.data!.docs[index];
               final userData = user.data() as Map<String, dynamic>;
 
+              // Ocultar el usuario actual de la lista
               if (currentUser?.uid == user.id) {
-                return SizedBox();
+                return const SizedBox.shrink();
               }
 
-              final bool isFollowing = (userData['followers'] ?? []).contains(currentUser?.uid);
+              final bool isFollowing =
+              (userData['followers'] ?? []).contains(currentUser?.uid);
 
               return ListTile(
                 leading: CircleAvatar(
@@ -82,7 +87,7 @@ class _FollowModuleState extends State<FollowModule> {
                       ? NetworkImage(userData['profilePicture'])
                       : null,
                   child: userData['profilePicture'] == null
-                      ? Icon(Icons.person, color: Colors.grey)
+                      ? const Icon(Icons.person, color: Colors.grey)
                       : null,
                 ),
                 title: Text(userData['displayName'] ?? 'Usuario'),
@@ -92,9 +97,12 @@ class _FollowModuleState extends State<FollowModule> {
                       ? () => _unfollowUser(user.id)
                       : () => _followUser(user.id),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isFollowing ? Colors.grey : Colors.blue,
+                    backgroundColor: isFollowing ? Colors.grey[400] : Colors.blue,
                   ),
-                  child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
+                  child: Text(
+                    isFollowing ? 'Siguiendo' : 'Seguir',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               );
             },

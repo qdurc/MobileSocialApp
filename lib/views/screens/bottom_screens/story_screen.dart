@@ -32,7 +32,7 @@ class _StoryScreenState extends State<StoryScreen> {
   Future<void> _uploadStory() async {
     if (_mediaFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, selecciona un archivo para tu historia.')),
+        const SnackBar(content: Text('Por favor, selecciona un archivo para tu historia.')),
       );
       return;
     }
@@ -55,23 +55,23 @@ class _StoryScreenState extends State<StoryScreen> {
         // Guardar detalles de la historia en Firestore
         await _firestore.collection('stories').doc(storyId).set({
           'userId': user.uid,
-          'username': user.displayName,
+          'username': user.displayName ?? 'Usuario',
           'userProfilePic': user.photoURL,
           'mediaUrl': fileUrl,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Historia subida con éxito.')),
+          const SnackBar(content: Text('Historia subida con éxito.')),
         );
         setState(() {
           _mediaFile = null;
         });
       }
     } catch (e) {
-      print('Error al subir la historia: $e');
+      debugPrint('Error al subir la historia: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al subir la historia.')),
+        const SnackBar(content: Text('Error al subir la historia.')),
       );
     } finally {
       setState(() {
@@ -84,13 +84,16 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Crear Historia'),
+        title: const Text(
+          'Crear Historia',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: Icon(Icons.check, color: Colors.blue),
+            icon: const Icon(Icons.check, color: Colors.blue),
             onPressed: _isUploading ? null : _uploadStory,
           ),
         ],
@@ -104,18 +107,30 @@ class _StoryScreenState extends State<StoryScreen> {
               onTap: _pickMedia,
               child: Container(
                 height: 200,
-                color: Colors.grey[200],
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
                 child: _mediaFile != null
-                    ? Image.file(_mediaFile!, fit: BoxFit.cover)
-                    : Icon(Icons.add_a_photo, color: Colors.grey, size: 50),
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.file(_mediaFile!, fit: BoxFit.cover),
+                )
+                    : const Icon(Icons.add_a_photo, color: Colors.grey, size: 50),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _isUploading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
               onPressed: _uploadStory,
-              child: Text('Subir Historia'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: const Text('Subir Historia'),
             ),
           ],
         ),

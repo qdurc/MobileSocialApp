@@ -14,7 +14,7 @@ void main() async {
     );
     runApp(const MyApp());
   } catch (e) {
-    print("Error al inicializar Firebase: $e");
+    debugPrint("Error al inicializar Firebase: $e");
   }
 }
 
@@ -29,31 +29,45 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // Mostrar un indicador de carga mientras se conecta
-            return Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-          if (snapshot.data == null) {
-            // Si no hay usuario autenticado, mostrar la pantalla de inicio de sesión
-            return LoginScreen();
-          } else {
-            // Si el usuario está autenticado, mostrar la pantalla principal
-            return HomeScreen();
-          }
-        },
-      ),
-      routes: {
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
-        '/home': (context) => HomeScreen(),
+      home: _buildAuthStateListener(),
+      routes: _buildRoutes(),
+    );
+  }
+
+  Widget _buildAuthStateListener() {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _LoadingScreen();
+        }
+        if (snapshot.data == null) {
+          return LoginScreen();
+        } else {
+          return HomeScreen();
+        }
       },
+    );
+  }
+
+  Map<String, WidgetBuilder> _buildRoutes() {
+    return {
+      '/login': (context) => LoginScreen(),
+      '/register': (context) => RegisterScreen(),
+      '/home': (context) => HomeScreen(),
+    };
+  }
+}
+
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
